@@ -21,7 +21,10 @@ contract Escrow {
   }
 
   function register(address _to) external payable {
-    console.log("Got here", _to);
+    require(_to != msg.sender, "Cannot register the same address");
+    require(_to != address(this), "Cannot register this contracts address");
+    console.log("Got herex2", address(this));
     escrowId++;
+    agreements[escrowId] = Agreement(msg.sender, _to, msg.value, 100);
   }
 }
