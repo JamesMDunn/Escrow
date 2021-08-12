@@ -1,24 +1,25 @@
 /* eslint-disable jest/valid-expect */
 import { ethers, network } from "hardhat";
 import { expect, assert } from "chai";
+import { Contract } from "ethers";
 
-describe("Escrow", function () {
-  it("Should not register on same account...", async function () {
-    const Escrow = await ethers.getContractFactory("Escrow");
-    const escrow = await Escrow.deploy();
+describe("Escrow", () => {
+  let Escrow;
+  let escrow: Contract;
+  beforeEach(async () => {
+    Escrow = await ethers.getContractFactory("Escrow");
+    escrow = await Escrow.deploy();
     await escrow.deployed();
+  });
 
+  it("Should not register on same account...", async () => {
     const [_owner, addr1] = await ethers.getSigners();
     await expect(
       escrow.connect(addr1).register(addr1.address, 1, { value: 1000 })
     ).to.be.revertedWith("Cannot register the same address");
   });
 
-  it("Should increment escrowId and have less balance from sender...", async function () {
-    const Escrow = await ethers.getContractFactory("Escrow");
-    const escrow = await Escrow.deploy();
-    await escrow.deployed();
-
+  it("Should increment escrowId and have less balance from sender...", async () => {
     const [_owner, addr1, addr2] = await ethers.getSigners();
     const balance = await addr1.getBalance();
     await escrow.connect(addr1).register(addr2.address, 1, { value: 1000 });
@@ -28,11 +29,7 @@ describe("Escrow", function () {
     expect(agreements.value).to.equal(1000);
   });
 
-  it("Should be able to withdraw...", async function () {
-    const Escrow = await ethers.getContractFactory("Escrow");
-    const escrow = await Escrow.deploy();
-    await escrow.deployed();
-
+  it("Should be able to withdraw...", async () => {
     const [_owner, addr1, addr2] = await ethers.getSigners();
     await escrow.connect(addr1).register(addr2.address, 1, { value: 1009 });
     const agreements = await escrow.agreements(1);
@@ -57,11 +54,7 @@ describe("Escrow", function () {
     assert.notEqual(balance1.toString(), balance2.toString());
   });
 
-  it("Should not be able to withdraw, not payblock...", async function () {
-    const Escrow = await ethers.getContractFactory("Escrow");
-    const escrow = await Escrow.deploy();
-    await escrow.deployed();
-
+  it("Should not be able to withdraw, not payblock...", async () => {
     const [_owner, addr1, addr2] = await ethers.getSigners();
     await escrow.connect(addr1).register(addr2.address, 1, { value: 1009 });
     const agreements = await escrow.agreements(1);
@@ -74,11 +67,7 @@ describe("Escrow", function () {
     );
   });
 
-  it("Should not be able to withdraw, not withdrawer...", async function () {
-    const Escrow = await ethers.getContractFactory("Escrow");
-    const escrow = await Escrow.deploy();
-    await escrow.deployed();
-
+  it("Should not be able to withdraw, not withdrawer...", async () => {
     const [_owner, addr1, addr2] = await ethers.getSigners();
     await escrow.connect(addr1).register(addr2.address, 1, { value: 1009 });
     const agreements = await escrow.agreements(1);
@@ -91,7 +80,7 @@ describe("Escrow", function () {
     );
   });
 
-  xit("Should return the new greeting once it's changed", async function () {
+  xit("Should return the new greeting once it's changed", async () => {
     const Greeter = await ethers.getContractFactory("Greeter");
     const greeter = await Greeter.deploy("Hello, world!");
     await greeter.deployed();
