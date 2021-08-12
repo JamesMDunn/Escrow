@@ -1,4 +1,6 @@
-const { expect, assert } = require("chai");
+/* eslint-disable jest/valid-expect */
+import { ethers, network } from "hardhat";
+import { expect, assert } from "chai";
 
 describe("Escrow", function () {
   it("Should not register on same account...", async function () {
