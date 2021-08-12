@@ -44,13 +44,14 @@ contract Escrow {
       _payRate, 
       _lastActivityBlock, 
       _expiredLock,
+      false,
       0
     );
     emit Registered(_depositer, _to, _amount);
     return escrowId;
   }
 
-  function withdraw(uint _id) external payable {
+  function withdraw(uint _id) external {
     require(agreements[_id].withdrawer == msg.sender, "you are not the withdrawer");
     require(block.number > agreements[_id].payBlockInterval + agreements[_id].lastActivityBlock,
         "Its not payblock time yet");
@@ -68,7 +69,7 @@ contract Escrow {
     _agreement.paidOut += _agreement.payRate;
   }
 
-  function depositor_withdraw(uint id) external payable {
+  function depositorWithdraw(uint _id) external {
     require(agreements[_id].depositor == msg.sender);
     require(agreements[_id].expiredLock <= block.number);
     require(agreements[_id].isExpired == false);
@@ -78,4 +79,20 @@ contract Escrow {
     _agreement.value = 0;
     _agreement.isExpired = true;
   }
+
+  function increaseAgreementPay(uint _id) external payable {
+    require(agreements[_id].depositor == msg.sender);
+    require(agreements[_id].isExpired == false);
+    Agreement storage _agreement = agreements[_id];
+    _agreement.value += msg.value;
+
+  }
+ 
+  function extendAgreement(uint _id, uint _num) external {
+    require(agreements[_id].depositor == msg.sender);
+    require(agreements[_id].isExpired == false);
+    Agreement storage _agreement = agreements[_id];
+    _agreement.expiredLock += _num; 
+  }
+
 }
