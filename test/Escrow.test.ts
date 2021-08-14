@@ -1,28 +1,34 @@
 /* eslint-disable jest/valid-expect */
 import { ethers, network } from "hardhat";
 import { expect, assert } from "chai";
-import { Contract } from "ethers";
+import { Contract, Signer } from "ethers";
 
 describe("Escrow", () => {
   let Escrow;
   let escrow: Contract;
+  let owner: Signer;
+  let addr1: Signer;
+  let addr2: Signer;
+
   beforeEach(async () => {
+    [owner, addr1, addr2] = await ethers.getSigners();
     Escrow = await ethers.getContractFactory("Escrow");
     escrow = await Escrow.deploy();
     await escrow.deployed();
   });
 
   it("Should not register on same account...", async () => {
-    const [_owner, addr1] = await ethers.getSigners();
     await expect(
-      escrow.connect(addr1).register(addr1.address, 1, { value: 1000 })
+      escrow
+        .connect(addr1)
+        .register(await addr1.getAddress(), 1, { value: 1000 })
     ).to.be.revertedWith("Cannot register the same address");
   });
 
   it("Should increment escrowId and have less balance from sender...", async () => {
-    const [_owner, addr1, addr2] = await ethers.getSigners();
-    const balance = await addr1.getBalance();
-    await escrow.connect(addr1).register(addr2.address, 1, { value: 1000 });
+    await escrow
+      .connect(addr1)
+      .register(await addr2.getAddress(), 1, { value: 1000 });
     const agreements = await escrow.agreements(1);
 
     expect(await escrow.escrowId()).to.equal(1);
@@ -30,8 +36,9 @@ describe("Escrow", () => {
   });
 
   it("Should be able to withdraw...", async () => {
-    const [_owner, addr1, addr2] = await ethers.getSigners();
-    await escrow.connect(addr1).register(addr2.address, 1, { value: 1009 });
+    await escrow
+      .connect(addr1)
+      .register(await addr2.getAddress(), 1, { value: 1009 });
     const agreements = await escrow.agreements(1);
 
     expect(await escrow.escrowId()).to.equal(1);
@@ -55,8 +62,9 @@ describe("Escrow", () => {
   });
 
   it("Should not be able to withdraw, not payblock...", async () => {
-    const [_owner, addr1, addr2] = await ethers.getSigners();
-    await escrow.connect(addr1).register(addr2.address, 1, { value: 1009 });
+    await escrow
+      .connect(addr1)
+      .register(await addr2.getAddress(), 1, { value: 1009 });
     const agreements = await escrow.agreements(1);
 
     expect(await escrow.escrowId()).to.equal(1);
@@ -68,8 +76,9 @@ describe("Escrow", () => {
   });
 
   it("Should not be able to withdraw, not withdrawer...", async () => {
-    const [_owner, addr1, addr2] = await ethers.getSigners();
-    await escrow.connect(addr1).register(addr2.address, 1, { value: 1009 });
+    await escrow
+      .connect(addr1)
+      .register(await addr2.getAddress(), 1, { value: 1009 });
     const agreements = await escrow.agreements(1);
 
     expect(await escrow.escrowId()).to.equal(1);
