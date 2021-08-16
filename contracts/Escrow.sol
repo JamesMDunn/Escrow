@@ -19,14 +19,14 @@ contract Escrow {
   uint public escrowId; 
   
   mapping(uint => Agreement) public agreements;
-  event Registered(address _depositer, address _withdrawer, uint256 _value);
+  event Registered(uint _id, address _depositer, address _withdrawer);
 
 
   constructor() {
     console.log("Deploying a Escrow Smart Contract!");
   }
 
-  function register(address payable _to, uint _payBlockInterval) external payable returns(uint){
+  function register(address payable _to, uint _payBlockInterval) external payable returns(bool){
     require(_to != msg.sender, "Cannot register the same address");
     require(_to != address(this), "Cannot register this contracts address");
     escrowId++;
@@ -47,8 +47,9 @@ contract Escrow {
       false,
       0
     );
-    emit Registered(_depositer, _to, _amount);
-    return escrowId;
+    emit Registered(escrowId, _depositer, _to);
+    console.log("after emit");
+    return true;
   }
 
   function withdraw(uint _id) external {
