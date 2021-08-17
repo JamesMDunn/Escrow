@@ -69,11 +69,6 @@ const App = () => {
     });
   };
 
-  // const getAddresses = async (): Promise<void> => {
-  //   const accs = await provider.listAccounts();
-  //   setAllAddresses(accs);
-  // };
-
   const idOnClick = async () => {
     const contract = new ethers.Contract(
       contractAddress,
@@ -127,12 +122,25 @@ const App = () => {
   };
 
   const withdrawFromAgreement = async () => {
-    // const sign = escrowContract.connect(signer);
-    // try {
-    //   await sign.withdraw(id);
-    // } catch (err) {
-    //   console.log(err.error);
-    // }
+    const provider = getProvider();
+    const signer = provider?.getSigner();
+    const contract = new ethers.Contract(contractAddress, Escrow.abi, signer);
+    try {
+      await contract.withdraw(id);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const depositerWithdraw = async () => {
+    const provider = getProvider();
+    const signer = provider?.getSigner();
+    const contract = new ethers.Contract(contractAddress, Escrow.abi, signer);
+    try {
+      await contract.depositorWithdraw(id);
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   return (
@@ -201,14 +209,23 @@ const App = () => {
             Withdraw
           </button>
         </div>
+        <div className="pb-2">
+          <button
+            className="h-10 w-10"
+            type="button"
+            onClick={depositerWithdraw}
+          >
+            Depositer Withdraw
+          </button>
+        </div>
         <div>
           {allAddresses.map((addy, index) => (
             <p key={index}>{addy}</p>
           ))}
         </div>
       </div>
-      <div className="flex items-center w-full flex-col text-white">
-        <div>
+      <div className="flex text-center w-full flex-col text-white">
+        <div className="pb-10">
           <h1> Last Register </h1>
           <p> ID: {lastRegister?.escrowId?.toString()}</p>
           <p> Depositer: {lastRegister?.depositer} </p>
