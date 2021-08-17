@@ -19,5 +19,13 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
  */
 // eslint-disable-next-line import/no-anonymous-default-export
 export default {
+  paths: {
+    artifacts: "./src/artifacts",
+  },
+  network: {
+    hardhat: {
+      chainId: 1337,
+    },
+  },
   solidity: "0.8.4",
 };
