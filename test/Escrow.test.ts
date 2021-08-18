@@ -32,39 +32,46 @@ describe("Escrow", () => {
     const agreements = await escrow.agreements(1);
 
     expect(await escrow.escrowId()).to.equal(1);
-    expect(agreements.value).to.equal(1000);
+    expect(agreements.value.eq(1000)).to.equal(true);
   });
 
   it("Should be able to withdraw...", async () => {
     await escrow
       .connect(addr1)
-      .register(await addr2.getAddress(), 1, { value: 1009 });
+      .register(await addr2.getAddress(), 2, { value: 1009 });
     const agreements = await escrow.agreements(1);
-
     expect(await escrow.escrowId()).to.equal(1);
     expect(agreements.value).to.equal(1009);
 
     const balance1 = await addr2.getBalance();
     //mine a block
     await network.provider.send("evm_mine");
+    await network.provider.send("evm_mine");
     await escrow.connect(addr2).withdraw(1);
     const balance2 = await addr2.getBalance();
 
     let agreements2 = await escrow.agreements(1);
-    console.log(
-      "paid out",
-      agreements2.paidOut.toString(),
-      agreements2.payRate.toString()
-    );
-    expect(agreements2.paidOut).to.equal(agreements2.payRate);
-    expect(Number(agreements.lastActivityBlock)).to.be.lessThan(
-      Number(agreements2.lastActivityBlock)
-    );
-    expect(Number(agreements.expiredLock)).to.be.lessThan(
-      Number(agreements2.expiredLock)
-    );
-    //TODO better test?
-    assert.notEqual(balance1.toString(), balance2.toString());
+    expect(agreements2.paidOut.eq(agreements2.payRate)).to.equal(true);
+    expect(
+      agreements.lastActivityBlock.lt(agreements2.lastActivityBlock)
+    ).to.equal(true);
+
+    expect(agreements.expiredLock.lt(agreements2.expiredLock)).to.equal(true);
+    expect(balance1.eq(balance2)).to.equal(false);
+  });
+
+  it("Should be able to withdraw last payment...", async () => {
+    // TODO last payment could be less than gas so wont be worth to withdraw
+    await escrow
+      .connect(addr1)
+      .register(await addr2.getAddress(), 1, { value: 2000000000000000 });
+
+    const balance1 = await addr2.getBalance();
+    //mine a block
+    await network.provider.send("evm_mine");
+    await escrow.connect(addr2).withdraw(1);
+    const balance2 = await addr2.getBalance();
+    expect(balance2.gt(balance1)).to.equal(true);
   });
 
   it("Should not be able to withdraw, not payblock...", async () => {
