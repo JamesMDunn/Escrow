@@ -7,3 +7,4 @@ package-lock.json
 
 # testing
 /coverage
+coverage.json

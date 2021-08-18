@@ -4,8 +4,6 @@ pragma solidity ^0.8.0;
 import "hardhat/console.sol";
 
 contract Escrow {
-    event Registered(uint256 _id, address _depositer, address _withdrawer);
-
     struct Agreement {
         address depositor;
         address withdrawer;
@@ -20,9 +18,18 @@ contract Escrow {
 
     uint256 public escrowId;
     mapping(uint256 => Agreement) public agreements;
+    event Registered(uint256 _id, address _depositer, address _withdrawer);
 
     constructor() {
         console.log("Deploying a Escrow Smart Contract!");
+    }
+
+    function raiseExpiration(uint256 _payBlockInterval)
+        private
+        view
+        returns (uint256)
+    {
+        return block.number + 100 + _payBlockInterval;
     }
 
     function register(address _to, uint256 _payBlockInterval)
@@ -32,12 +39,13 @@ contract Escrow {
     {
         require(_to != msg.sender, "Cannot register the same address");
         require(_to != address(this), "Cannot register this contracts address");
+        require(msg.value > 0);
         escrowId++;
         address _depositer = msg.sender;
         uint256 _amount = msg.value;
         uint256 _payRate = _amount / _payBlockInterval;
         uint256 _lastActivityBlock = block.number;
-        uint256 _expiredLock = block.number + 100;
+        uint256 _expiredLock = raiseExpiration(_payBlockInterval);
 
         agreements[escrowId] = Agreement(
             _depositer,
@@ -67,6 +75,8 @@ contract Escrow {
             "Its not payblock time yet"
         );
         require(agreements[_id].isExpired == false);
+        require(agreements[_id].value > 0);
+
         Agreement storage _agreement = agreements[escrowId];
         _agreement.lastActivityBlock = block.number;
         if (_agreement.payRate > _agreement.value) {
@@ -78,6 +88,7 @@ contract Escrow {
         _agreement.value -= _agreement.payRate;
         payable(msg.sender).transfer(_agreement.payRate);
         _agreement.paidOut += _agreement.payRate;
+        _agreement.expiredLock = raiseExpiration(_agreement.payBlockInterval);
     }
 
     function depositorWithdraw(uint256 _id) public {
@@ -90,7 +101,6 @@ contract Escrow {
             "this agreement has expired"
         );
         Agreement storage _agreement = agreements[_id];
-        console.log("this is sender", msg.sender);
         payable(msg.sender).transfer(_agreement.value);
         _agreement.value = 0;
         _agreement.isExpired = true;

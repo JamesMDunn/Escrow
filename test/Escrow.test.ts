@@ -49,7 +49,7 @@ describe("Escrow", () => {
     await network.provider.send("evm_mine");
     await escrow.connect(addr2).withdraw(1);
     const balance2 = await addr2.getBalance();
-    console.log(agreements.value.toString());
+
     let agreements2 = await escrow.agreements(1);
     console.log(
       "paid out",
@@ -57,6 +57,12 @@ describe("Escrow", () => {
       agreements2.payRate.toString()
     );
     expect(agreements2.paidOut).to.equal(agreements2.payRate);
+    expect(Number(agreements.lastActivityBlock)).to.be.lessThan(
+      Number(agreements2.lastActivityBlock)
+    );
+    expect(Number(agreements.expiredLock)).to.be.lessThan(
+      Number(agreements2.expiredLock)
+    );
     //TODO better test?
     assert.notEqual(balance1.toString(), balance2.toString());
   });
@@ -87,6 +93,22 @@ describe("Escrow", () => {
     await expect(escrow.connect(addr1).withdraw(1)).to.be.revertedWith(
       "you are not the withdrawer"
     );
+  });
+
+  it("Should be able to depositerwithdraw...", async () => {
+    await escrow
+      .connect(addr1)
+      .register(await addr2.getAddress(), 1, { value: 1009 });
+    const agreements = await escrow.agreements(1);
+
+    expect(await escrow.escrowId()).to.equal(1);
+    expect(agreements.value).to.equal(1009);
+
+    const balance1 = await addr1.getBalance();
+    await escrow.connect(addr1).depositorWithdraw(1);
+    const balance2 = await addr1.getBalance();
+
+    expect(balance1).equal(balance2);
   });
 
   xit("Should return the new greeting once it's changed", async () => {

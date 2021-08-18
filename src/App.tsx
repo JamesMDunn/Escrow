@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { BigNumber, BigNumberish, Contract, ethers } from "ethers";
+import React, { useState } from "react";
+import { BigNumberish, ethers } from "ethers";
 import Escrow from "./artifacts/contracts/Escrow.sol/Escrow.json";
 
 const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
@@ -21,8 +21,6 @@ interface Agreement extends Register {
 }
 
 const App = () => {
-  const [allAddresses, setAllAddresses] = useState<String[]>([]);
-  const [selectedAddress, setSelectedAddress] = useState("");
   const [id, setId] = useState(0);
   const [toAddress, setToAddress] = useState("");
   const [payInterval, setPayInterval] = useState(0);
@@ -31,14 +29,6 @@ const App = () => {
     {} as Agreement
   );
   const [value, setValue] = useState("");
-
-  useEffect(() => {
-    // getAddresses();
-    connectContract();
-    return () => {
-      // escrowContract.removeAllListeners();
-    };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const requestAccount = async () => {
     //@ts-ignore
@@ -53,29 +43,13 @@ const App = () => {
     }
   };
 
-  const connectContract = () => {
-    const provider = getProvider();
-    let contract = new ethers.Contract(contractAddress, Escrow.abi, provider);
-    console.log("connected", contract);
-    console.log({ provider });
-    contract.on("Registered", (escrowId, depositer, withdrawer) => {
-      console.log(
-        "event sent contract",
-        typeof escrowId.toString(),
-        depositer,
-        withdrawer
-      );
-      setLastRegister({ escrowId, depositer, withdrawer });
-    });
-  };
-
   const idOnClick = async () => {
+    if (id <= 0) return;
     const contract = new ethers.Contract(
       contractAddress,
       Escrow.abi,
       getProvider()
     );
-    console.log("got here", contract);
     let data = await contract.agreements(id);
     let agreement: Agreement = {
       escrowId: id,
@@ -89,7 +63,6 @@ const App = () => {
       isExpired: data[7],
       paidOut: data[8],
     };
-    console.log(agreement);
     setCurrentAgreement(agreement);
   };
 
@@ -98,11 +71,18 @@ const App = () => {
     const provider = getProvider();
     const signer = provider?.getSigner();
     const contract = new ethers.Contract(contractAddress, Escrow.abi, signer);
-    console.log(ethers.utils.parseUnits(value));
-    const transaction = await contract.register(toAddress, payInterval, {
-      value: ethers.utils.parseUnits(value),
-    });
-    await transaction.wait();
+    try {
+      const transaction = await contract.register(toAddress, payInterval, {
+        value: ethers.utils.parseUnits(value),
+      });
+      contract.on("Registered", (escrowId, depositer, withdrawer) => {
+        console.log("event");
+        setLastRegister({ escrowId, depositer, withdrawer });
+      });
+      await transaction.wait();
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   const readAgreementData = () => {
@@ -153,15 +133,6 @@ const App = () => {
             type="number"
             value={value}
             onChange={(e) => setValue(e.target.value)}
-          />
-        </div>
-        <div className="pb-2">
-          <label className="pr-2">Address</label>
-          <input
-            className="rounded text-black"
-            type="text"
-            value={selectedAddress}
-            onChange={(e) => setSelectedAddress(e.target.value)}
           />
         </div>
         <div className="pb-2">
@@ -217,11 +188,6 @@ const App = () => {
           >
             Depositer Withdraw
           </button>
-        </div>
-        <div>
-          {allAddresses.map((addy, index) => (
-            <p key={index}>{addy}</p>
-          ))}
         </div>
       </div>
       <div className="flex text-center w-full flex-col text-white">
