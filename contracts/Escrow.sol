@@ -80,7 +80,7 @@ contract Escrow {
         Agreement storage _agreement = agreements[escrowId];
         _agreement.lastActivityBlock = block.number;
         if (_agreement.payRate > _agreement.value) {
-            _agreement.withdrawer.call{value: _agreement.value};
+            payable(msg.sender).transfer(_agreement.value);
             _agreement.paidOut += _agreement.value;
             _agreement.value = 0;
             return;

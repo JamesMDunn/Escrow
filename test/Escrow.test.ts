@@ -96,19 +96,19 @@ describe("Escrow", () => {
   });
 
   it("Should be able to depositerwithdraw...", async () => {
-    await escrow
-      .connect(addr1)
-      .register(await addr2.getAddress(), 1, { value: 1009 });
+    await escrow.connect(addr1).register(await addr2.getAddress(), 1, {
+      value: ethers.utils.parseUnits("30"),
+    });
     const agreements = await escrow.agreements(1);
 
     expect(await escrow.escrowId()).to.equal(1);
-    expect(agreements.value).to.equal(1009);
+    expect(agreements.value).to.equal(ethers.utils.parseUnits("30"));
 
     const balance1 = await addr1.getBalance();
     await escrow.connect(addr1).depositorWithdraw(1);
     const balance2 = await addr1.getBalance();
 
-    expect(balance1).equal(balance2);
+    expect(balance1.lt(balance2)).to.equal(true);
   });
 
   xit("Should return the new greeting once it's changed", async () => {

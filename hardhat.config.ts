@@ -1,5 +1,6 @@
 import { task } from "hardhat/config";
 import "@nomiclabs/hardhat-waffle";
+import "@nomiclabs/hardhat-ethers";
 import "solidity-coverage";
 
 // This is a sample Hardhat task. To learn how to create your own go to
@@ -23,8 +24,9 @@ export default {
   paths: {
     artifacts: "./src/artifacts",
   },
-  network: {
+  networks: {
     hardhat: {
+      initialBaseFeePerGas: 0,
       chainId: 1337,
     },
   },
